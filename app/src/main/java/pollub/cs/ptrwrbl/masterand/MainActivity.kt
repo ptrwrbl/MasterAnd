@@ -8,21 +8,15 @@ import androidx.navigation.compose.rememberNavController
 
 import pollub.cs.ptrwrbl.masterand.ui.theme.MasterAndTheme
 class MainActivity : ComponentActivity() {
-
     lateinit var navController: NavHostController
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             MasterAndTheme {
-
                 navController = rememberNavController()
 
-                //Funkcja odpowiedziana za powiązania między kolejnymi ekranami
                 SetupNavGraph(navController = navController)
-
-
             }
         }
     }

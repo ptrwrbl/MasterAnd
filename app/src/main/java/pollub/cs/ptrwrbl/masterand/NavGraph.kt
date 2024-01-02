@@ -1,6 +1,5 @@
 package pollub.cs.ptrwrbl.masterand
 
-
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -10,7 +9,7 @@ import androidx.navigation.compose.composable
 fun SetupNavGraph(navController: NavHostController){
     NavHost(
         navController = navController,
-        startDestination = "login_screen" ){
+        startDestination = "game_screen" ){
 
         composable(route = Screen.Login.route){
             LoginScreenInitial(navController = navController)

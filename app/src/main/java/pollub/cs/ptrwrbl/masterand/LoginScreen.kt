@@ -27,42 +27,41 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import androidx.navigation.NavHostController
-import coil.ImageLoader
 import coil.compose.AsyncImage
-import coil.compose.rememberAsyncImagePainter
-import coil.decode.ImageDecoderDecoder
-import pollub.cs.ptrwrbl.masterand.ui.theme.MasterAndTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OutlinedTextFieldWithError(value: String, onValueChange: (String) -> Unit, label: String, hasError: Boolean) {
+fun OutlinedTextFieldWithError(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    hasError: Boolean,
+    errorMessage: String
+) {
     OutlinedTextField(
         modifier = Modifier.fillMaxWidth(),
         value = value,
         onValueChange = onValueChange,
-        label = { Text("${label}") },
+        label = { Text(label) },
         singleLine = true,
         isError = hasError,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
         supportingText = {
             if(hasError) {
-                Text("Błędne dane")
+                Text(
+                    text = errorMessage,
+                    color = MaterialTheme.colorScheme.error
+                )
             }
         }
     )
@@ -109,6 +108,19 @@ fun ProfileImageWithPicker(profileImageUri: Uri?, selectImageOnClick: () -> Unit
     }
 }
 
+fun validateName(name: String): Boolean {
+    return !name.isEmpty()
+}
+
+fun validateEmail(email: String): Boolean {
+    val emailPattern = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\$")
+    return emailPattern.matches(email)
+}
+
+fun validateColorNumber(colorNumber: String): Boolean {
+    return colorNumber.toIntOrNull()?.let { it in 5..10 } ?: false
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreenInitial(
@@ -120,15 +132,6 @@ fun LoginScreenInitial(
     val profileImageUri = rememberSaveable{
         mutableStateOf<Uri?>(null)
     }
-    var isErrorName by rememberSaveable {
-        mutableStateOf(false)
-    }
-    var isErrorEmail by rememberSaveable {
-        mutableStateOf(false)
-    }
-    var isErrorColorNumber by rememberSaveable {
-        mutableStateOf(false)
-    }
 
     val imagePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
@@ -137,19 +140,6 @@ fun LoginScreenInitial(
                 profileImageUri.value = selectedUri
             }
         })
-
-    fun validateName(text: String){
-        isErrorName = text.isEmpty()
-    }
-
-    fun validateEmail(text: String){
-        val emailPattern = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\$")
-        isErrorEmail = !emailPattern.matches(text)
-    }
-
-    fun validateColorNumber(text: String){
-        isErrorColorNumber = (text.toInt() < 5 || text.toInt() > 10)
-    }
 
     Column(
         modifier = Modifier
@@ -162,6 +152,7 @@ fun LoginScreenInitial(
         Text(
             text = "MasterAnd",
             style = MaterialTheme.typography.displayLarge,
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(bottom = 48.dp)
         )
         ProfileImageWithPicker(
@@ -176,32 +167,40 @@ fun LoginScreenInitial(
 
         OutlinedTextFieldWithError(
             value = name.value,
-            onValueChange = { name.value = it
-                validateName(it)},
+            onValueChange = { name.value = it },
             label = "Enter Name",
-            hasError = isErrorName,
+            hasError = validateName(name.value),
+            errorMessage = "Name cannot be empty"
         )
         Spacer(modifier = Modifier.height(16.dp))
         OutlinedTextFieldWithError(
             value = email.value,
-            onValueChange = { email.value = it
-                validateEmail(it)},
+            onValueChange = { email.value = it },
             label = "Enter email",
-            hasError = isErrorEmail,
+            hasError = validateEmail(email.value),
+            errorMessage = "Email has to use john@example.net format"
         )
         Spacer(modifier = Modifier.height(16.dp))
         OutlinedTextFieldWithError(
             value = colorNumber.value,
-            onValueChange = { colorNumber.value = it
-                validateColorNumber(it)},
+            onValueChange = { colorNumber.value = it },
             label = "Enter number of colors",
-            hasError = isErrorColorNumber,
+            hasError = validateColorNumber(colorNumber.value),
+            errorMessage = "Color number has to be between 5 and 10"
         )
         Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = { navController.navigate(route = Screen.Game.route) }, modifier = Modifier.fillMaxWidth()) {
+        Button(
+            onClick = {
+                if(validateName(name.value) &&
+                    validateEmail(email.value) &&
+                    validateColorNumber(colorNumber.value)) {
+                    navController.navigate(route = Screen.Game.route)
+                }
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
             Text(text = "Next")
         }
-
     }
 }
 
