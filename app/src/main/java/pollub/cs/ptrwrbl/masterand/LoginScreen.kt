@@ -169,7 +169,7 @@ fun LoginScreenInitial(
             value = name.value,
             onValueChange = { name.value = it },
             label = "Enter Name",
-            hasError = validateName(name.value),
+            hasError = !validateName(name.value),
             errorMessage = "Name cannot be empty"
         )
         Spacer(modifier = Modifier.height(16.dp))
@@ -177,7 +177,7 @@ fun LoginScreenInitial(
             value = email.value,
             onValueChange = { email.value = it },
             label = "Enter email",
-            hasError = validateEmail(email.value),
+            hasError = !validateEmail(email.value),
             errorMessage = "Email has to use john@example.net format"
         )
         Spacer(modifier = Modifier.height(16.dp))
@@ -185,7 +185,7 @@ fun LoginScreenInitial(
             value = colorNumber.value,
             onValueChange = { colorNumber.value = it },
             label = "Enter number of colors",
-            hasError = validateColorNumber(colorNumber.value),
+            hasError = !validateColorNumber(colorNumber.value),
             errorMessage = "Color number has to be between 5 and 10"
         )
         Spacer(modifier = Modifier.height(16.dp))
@@ -194,7 +194,7 @@ fun LoginScreenInitial(
                 if(validateName(name.value) &&
                     validateEmail(email.value) &&
                     validateColorNumber(colorNumber.value)) {
-                    navController.navigate(route = Screen.Game.route)
+                    navController.navigate(route = "game_screen?colors=${colorNumber.value}")
                 }
             },
             modifier = Modifier.fillMaxWidth()
