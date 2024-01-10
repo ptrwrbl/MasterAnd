@@ -155,8 +155,23 @@ fun selectNextAvailableColor(
     selectedColors: List<Color>,
     buttonNumber: Int
 ): Color {
+    val currentIndex = availableColors.indexOf(selectedColors[buttonNumber])
+    var newColorIndex = currentIndex + 1
     val availableButNotSelected = availableColors.filterNot { selectedColors.contains(it) }
-    return availableButNotSelected.shuffled().first()
+
+    while(newColorIndex != currentIndex) {
+        newColorIndex++
+
+        val nextColor = availableColors[currentIndex]
+        if (nextColor in availableButNotSelected) {
+            return nextColor
+        }
+
+        if(newColorIndex == availableColors.size)
+            newColorIndex = 0
+    }
+
+    return availableButNotSelected.first()
 }
 
 fun checkColors(
