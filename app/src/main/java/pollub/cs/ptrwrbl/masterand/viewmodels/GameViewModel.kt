@@ -19,7 +19,7 @@ class GameViewModel(private val scoreRepository: ScoreRepository) : ViewModel() 
 
             if(scoreToUpdate != null) {
                 scoreId = scoreToUpdate.scoreId
-                if(score == null || score < scoreToUpdate.score)
+                if(score == null || score > scoreToUpdate.score)
                     score = scoreToUpdate.score
             }
         }
