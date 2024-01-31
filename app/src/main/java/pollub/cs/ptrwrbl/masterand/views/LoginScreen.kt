@@ -1,11 +1,12 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
 
-package pollub.cs.ptrwrbl.masterand
+package pollub.cs.ptrwrbl.masterand.views
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,17 +28,27 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import kotlinx.coroutines.launch
+import pollub.cs.ptrwrbl.masterand.R
+import pollub.cs.ptrwrbl.masterand.navigation.Screen
+import pollub.cs.ptrwrbl.masterand.viewmodels.PlayerViewModel
+import pollub.cs.ptrwrbl.masterand.viewmodels.ViewModelProvider
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -108,24 +119,13 @@ fun ProfileImageWithPicker(profileImageUri: Uri?, selectImageOnClick: () -> Unit
     }
 }
 
-fun validateName(name: String): Boolean {
-    return !name.isEmpty()
-}
-
-fun validateEmail(email: String): Boolean {
-    val emailPattern = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\$")
-    return emailPattern.matches(email)
-}
-
-fun validateColorNumber(colorNumber: String): Boolean {
-    return colorNumber.toIntOrNull()?.let { it in 5..10 } ?: false
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreenInitial(
-    navController: NavController
+    navController: NavController,
+    playerViewModel: PlayerViewModel = viewModel(factory = ViewModelProvider.Factory)
 ) {
+    val coroutineScope = rememberCoroutineScope()
     val name = rememberSaveable { mutableStateOf("") }
     val email = rememberSaveable { mutableStateOf("")}
     val colorNumber = rememberSaveable { mutableStateOf("")}
@@ -141,6 +141,13 @@ fun LoginScreenInitial(
             }
         })
 
+    val infiniteTransition = rememberInfiniteTransition()
+    val scale by infiniteTransition.animateFloat(
+        initialValue = 1.0F,
+        targetValue = 1.5F,
+        animationSpec = infiniteRepeatable(tween(1500), RepeatMode.Reverse)
+    )
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -153,7 +160,11 @@ fun LoginScreenInitial(
             text = "MasterAnd",
             style = MaterialTheme.typography.displayLarge,
             color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(bottom = 48.dp)
+            modifier = Modifier.padding(bottom = 48.dp).graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+                transformOrigin = TransformOrigin.Center
+            }
         )
         ProfileImageWithPicker(
             profileImageUri = profileImageUri.value,
@@ -193,8 +204,15 @@ fun LoginScreenInitial(
             onClick = {
                 if(validateName(name.value) &&
                     validateEmail(email.value) &&
-                    validateColorNumber(colorNumber.value)) {
-                    navController.navigate(route = "game_screen?colors=${colorNumber.value}")
+                    validateColorNumber(colorNumber.value)
+                ) {
+                    coroutineScope.launch {
+                        playerViewModel.name = name.value
+                        playerViewModel.email = email.value
+                        playerViewModel.profileImageUri = profileImageUri.value
+                        playerViewModel.savePlayer()
+                        navController.navigate(route = Screen.Game.route + "/${playerViewModel.playerId}/${colorNumber.value}")
+                    }
                 }
             },
             modifier = Modifier.fillMaxWidth()
@@ -202,6 +220,21 @@ fun LoginScreenInitial(
             Text(text = "Next")
         }
     }
+}
+
+
+
+fun validateName(name: String): Boolean {
+    return !name.isEmpty()
+}
+
+fun validateEmail(email: String): Boolean {
+    val emailPattern = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\$")
+    return emailPattern.matches(email)
+}
+
+fun validateColorNumber(colorNumber: String): Boolean {
+    return colorNumber.toIntOrNull()?.let { it in 5..10 } ?: false
 }
 
 

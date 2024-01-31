@@ -1,5 +1,12 @@
-package pollub.cs.ptrwrbl.masterand
+package pollub.cs.ptrwrbl.masterand.views
 
+import androidx.compose.animation.Animatable
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationVector4D
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -23,6 +30,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -36,6 +44,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import okhttp3.internal.toImmutableList
+import pollub.cs.ptrwrbl.masterand.navigation.Screen
 
 @Composable
 fun CircularButton(onClick: () -> Unit, color: Color) {
@@ -79,27 +88,40 @@ fun SmallCircle(color: Color) {
 
 @Composable
 fun FeedbackCircles(colors: List<Color>) {
-    Column(
-        verticalArrangement = Arrangement.SpaceBetween,
-        modifier = Modifier.padding(end = 5.dp)
-            .height(50.dp)
-    ) {
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier.padding(end = 5.dp)
-                .width(50.dp)
-        ) {
-            colors.take(2).forEach { color ->
-                SmallCircle(color = color)
-            }
+    val rows = 2
+    val columns = 2
+
+    val animatedColors: Array<Animatable<Color, AnimationVector4D>> = arrayOf(
+        remember { Animatable(Color.Transparent) },
+        remember { Animatable(Color.Transparent) },
+        remember { Animatable(Color.Transparent) },
+        remember { Animatable(Color.Transparent) }
+    )
+
+    LaunchedEffect(colors) {
+        colors.forEachIndexed { colorIndex, color ->
+            animatedColors[colorIndex].animateTo(color, animationSpec = tween(500))
         }
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier.padding(end = 5.dp)
-                .width(50.dp)
-        ) {
-            colors.drop(2).take(2).forEach { color ->
-                SmallCircle(color = color)
+    }
+
+    Column(
+        modifier = Modifier
+            .width(50.dp)
+            .padding(end = 5.dp)
+            .height(50.dp),
+        verticalArrangement = Arrangement.SpaceBetween
+    ) {
+        repeat(rows) { rowIndex ->
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier
+                    .padding(end = 5.dp)
+                    .width(50.dp)
+            ) {
+                repeat(columns) { colIndex ->
+                    val index = rowIndex * columns + colIndex
+                    SmallCircle(color = animatedColors[index].value)
+                }
             }
         }
     }
@@ -113,7 +135,17 @@ fun GameRow(
     onSelectColorClick: (Int) -> Unit,
     onCheckClick: () -> Unit
 ) {
+    var (buttonVisible, setButtonVisible) = remember { mutableStateOf(false) }
 
+    LaunchedEffect(Unit) {
+        setButtonVisible(false)
+    }
+
+    LaunchedEffect(clickable) {
+        if (!clickable) {
+            setButtonVisible(true)
+        }
+    }
     Row(
         horizontalArrangement = Arrangement.spacedBy(5.dp),
         modifier = Modifier.padding(bottom = 8.dp)
@@ -123,78 +155,34 @@ fun GameRow(
             onClick = onSelectColorClick
         )
 
-        IconButton(
-            onClick = { if (clickable) onCheckClick() },
-            enabled = clickable,
-            modifier = Modifier
-                .clip(CircleShape)
-                .background(if (clickable) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.background)
-                .size(50.dp)
+        AnimatedVisibility(
+            visible = buttonVisible,
+            enter = fadeIn(animationSpec = tween(1500)),
+            exit = fadeOut(animationSpec = tween(1500))
         ) {
-            Icon(
-                Icons.Filled.Done,
-                contentDescription = "Check",
-                tint = if (clickable) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onBackground,
-            )
+            IconButton(
+                onClick = { if (clickable) onCheckClick() },
+                enabled = clickable,
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(if (clickable) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.background)
+                    .size(50.dp)
+            ) {
+                Icon(
+                    Icons.Filled.Done,
+                    contentDescription = "Check",
+                    tint = if (clickable) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onBackground,
+                )
+            }
         }
         FeedbackCircles(colors = feedbackColors)
     }
 }
 
-private val AVAILABLE_COLORS = listOf(
-    Color.Red, Color.Green, Color.Blue, Color.Yellow, Color.Magenta,
-    Color.Cyan, Color.Gray, Color.DarkGray, Color.Black, Color.LightGray
-)
-
-fun selectRandomColors(availableColors: List<Color>, numToSelect: Int): List<Color> {
-    return availableColors.shuffled().take(numToSelect)
-}
-
-fun selectNextAvailableColor(
-    availableColors: List<Color>,
-    selectedColors: List<Color>,
-    buttonNumber: Int
-): Color {
-    val currentIndex = availableColors.indexOf(selectedColors[buttonNumber])
-    val availableButNotSelected = availableColors.filterNot { selectedColors.contains(it) }
-
-    var newColorIndex = if (currentIndex == availableColors.size - 1) 0 else currentIndex + 1
-    while(newColorIndex != currentIndex) {
-        val nextColor = availableColors[currentIndex]
-        if (nextColor in availableButNotSelected) {
-            return nextColor
-        }
-
-        newColorIndex++
-
-        if(newColorIndex == availableColors.size)
-            newColorIndex = 0
-    }
-
-    return availableButNotSelected.first()
-}
-
-fun checkColors(
-    selectedColors: List<Color>,
-    correctColors: List<Color>,
-    notFoundColor: Color
-): List<Color> {
-    val feedbackColors = mutableListOf<Color>()
-    for (i in selectedColors.indices) {
-        if (selectedColors[i] == correctColors[i]) {
-            feedbackColors.add(Color.Red)
-        } else if (correctColors.contains(selectedColors[i])) {
-            feedbackColors.add(Color.Yellow)
-        } else {
-            feedbackColors.add(notFoundColor)
-        }
-    }
-    return feedbackColors
-}
-
 @Composable
 fun GameScreenInitial(
     navController: NavController,
+    playerId: Long,
     colors: Int = 6
 ) {
     var usedColors by remember { mutableStateOf(selectRandomColors(AVAILABLE_COLORS, colors)) }
@@ -307,7 +295,7 @@ fun GameScreenInitial(
                 modifier = Modifier.padding(top = 48.dp)
             ) {
                 Button(onClick = {
-                    navController.navigate(route = Screen.Profile.route)
+                    navController.navigate(route = Screen.Profile.route + "${playerId}/${colors}")
                 }) { Text(text = "See your profile") }
                 Button(onClick = {
                     navController.navigate(route = Screen.Login.route)
@@ -315,7 +303,55 @@ fun GameScreenInitial(
             }
         }
     }
-
 }
 
+private val AVAILABLE_COLORS = listOf(
+    Color.Red, Color.Green, Color.Blue, Color.Yellow, Color.Magenta,
+    Color.Cyan, Color.Gray, Color.DarkGray, Color.Black, Color.LightGray
+)
 
+fun selectRandomColors(availableColors: List<Color>, numToSelect: Int): List<Color> {
+    return availableColors.shuffled().take(numToSelect)
+}
+
+fun selectNextAvailableColor(
+    availableColors: List<Color>,
+    selectedColors: List<Color>,
+    buttonNumber: Int
+): Color {
+    val currentIndex = availableColors.indexOf(selectedColors[buttonNumber])
+    val availableButNotSelected = availableColors.filterNot { selectedColors.contains(it) }
+
+    var newColorIndex = if (currentIndex == availableColors.size - 1) 0 else currentIndex + 1
+    while(newColorIndex != currentIndex) {
+        val nextColor = availableColors[currentIndex]
+        if (nextColor in availableButNotSelected) {
+            return nextColor
+        }
+
+        newColorIndex++
+
+        if(newColorIndex == availableColors.size)
+            newColorIndex = 0
+    }
+
+    return availableButNotSelected.first()
+}
+
+fun checkColors(
+    selectedColors: List<Color>,
+    correctColors: List<Color>,
+    notFoundColor: Color
+): List<Color> {
+    val feedbackColors = mutableListOf<Color>()
+    for (i in selectedColors.indices) {
+        if (selectedColors[i] == correctColors[i]) {
+            feedbackColors.add(Color.Red)
+        } else if (correctColors.contains(selectedColors[i])) {
+            feedbackColors.add(Color.Yellow)
+        } else {
+            feedbackColors.add(notFoundColor)
+        }
+    }
+    return feedbackColors
+}

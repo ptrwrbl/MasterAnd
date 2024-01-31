@@ -1,4 +1,4 @@
-package pollub.cs.ptrwrbl.masterand
+package pollub.cs.ptrwrbl.masterand.navigation
 
 sealed class Screen(val route: String) {
     object Login: Screen(route = "login_screen")

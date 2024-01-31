@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import pollub.cs.ptrwrbl.masterand.navigation.SetupNavGraph
 
 import pollub.cs.ptrwrbl.masterand.ui.theme.MasterAndTheme
 class MainActivity : ComponentActivity() {
