@@ -20,7 +20,7 @@ import kotlin.jvm.Volatile
 abstract class HighScoreDatabase: RoomDatabase() {
     abstract fun getPlayerDao(): PlayerDao
     abstract fun getScoreDao(): ScoreDao
-    abstract fun getPlayerWithScoreDao(): PlayerScoreDao
+    abstract fun getPlayerScoreDao(): PlayerScoreDao
     companion object {
         @Volatile
         private var Instance: HighScoreDatabase? = null

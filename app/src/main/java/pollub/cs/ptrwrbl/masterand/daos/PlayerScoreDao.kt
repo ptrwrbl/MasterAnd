@@ -7,8 +7,11 @@ import pollub.cs.ptrwrbl.masterand.models.PlayerWithScore
 
 @Dao
 interface PlayerScoreDao {
-    @Query("select players.playerId as playerId, scores.scoreId as scoreId, scores.score as score," +
-            "players.name as name, players.email as email " +
-            "from players, scores where players.playerId = scores.playerId")
+    @Query("select scores.scoreId, scores.playerId, scores.score, players.name, players.email " +
+            "from players inner join scores on scores.playerId = players.playerId " +
+            "where players.playerId = :playerId")
+    fun getPlayerScore(playerId: Long): Flow<PlayerWithScore>
+    @Query("select scores.scoreId, scores.playerId, scores.score, players.name, players.email " +
+            "from players inner join scores on scores.playerId = players.playerId")
     fun getPlayersWithScore(): Flow<List<PlayerWithScore>>
 }

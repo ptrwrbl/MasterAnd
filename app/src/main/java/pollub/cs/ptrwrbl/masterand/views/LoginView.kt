@@ -3,6 +3,7 @@
 package pollub.cs.ptrwrbl.masterand.views
 
 import android.net.Uri
+import android.util.Patterns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -47,7 +48,7 @@ import coil.compose.AsyncImage
 import kotlinx.coroutines.launch
 import pollub.cs.ptrwrbl.masterand.R
 import pollub.cs.ptrwrbl.masterand.navigation.Screen
-import pollub.cs.ptrwrbl.masterand.viewmodels.PlayerViewModel
+import pollub.cs.ptrwrbl.masterand.viewmodels.LoginViewModel
 import pollub.cs.ptrwrbl.masterand.viewmodels.ViewModelProvider
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -121,9 +122,9 @@ fun ProfileImageWithPicker(profileImageUri: Uri?, selectImageOnClick: () -> Unit
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginScreenInitial(
+fun LoginScreen(
     navController: NavController,
-    playerViewModel: PlayerViewModel = viewModel(factory = ViewModelProvider.Factory)
+    loginViewModel: LoginViewModel = viewModel(factory = ViewModelProvider.Factory)
 ) {
     val coroutineScope = rememberCoroutineScope()
     val name = rememberSaveable { mutableStateOf("") }
@@ -207,11 +208,11 @@ fun LoginScreenInitial(
                     validateColorNumber(colorNumber.value)
                 ) {
                     coroutineScope.launch {
-                        playerViewModel.name = name.value
-                        playerViewModel.email = email.value
-                        playerViewModel.profileImageUri = profileImageUri.value
-                        playerViewModel.savePlayer()
-                        navController.navigate(route = Screen.Game.route + "/${playerViewModel.playerId}/${colorNumber.value}")
+                        loginViewModel.name = name.value
+                        loginViewModel.email = email.value
+                        loginViewModel.profileImageUri = profileImageUri.value
+                        loginViewModel.savePlayer()
+                        navController.navigate(route = Screen.Game.route + "/${loginViewModel.playerId}/${colorNumber.value}")
                     }
                 }
             },
@@ -229,8 +230,7 @@ fun validateName(name: String): Boolean {
 }
 
 fun validateEmail(email: String): Boolean {
-    val emailPattern = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\$")
-    return emailPattern.matches(email)
+    return Patterns.EMAIL_ADDRESS.matcher(email).matches()
 }
 
 fun validateColorNumber(colorNumber: String): Boolean {

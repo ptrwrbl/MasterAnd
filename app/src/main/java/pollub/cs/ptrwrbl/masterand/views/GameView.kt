@@ -36,15 +36,20 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import kotlinx.coroutines.launch
 import okhttp3.internal.toImmutableList
 import pollub.cs.ptrwrbl.masterand.navigation.Screen
+import pollub.cs.ptrwrbl.masterand.viewmodels.GameViewModel
+import pollub.cs.ptrwrbl.masterand.viewmodels.ViewModelProvider
 
 @Composable
 fun CircularButton(onClick: () -> Unit, color: Color) {
@@ -82,7 +87,7 @@ fun SmallCircle(color: Color) {
             .clip(CircleShape)
             .background(color = color)
             .border(2.dp, MaterialTheme.colorScheme.onBackground, CircleShape)
-            .size(22.dp)
+            .size(20.dp)
     )
 }
 
@@ -107,7 +112,6 @@ fun FeedbackCircles(colors: List<Color>) {
     Column(
         modifier = Modifier
             .width(50.dp)
-            .padding(end = 5.dp)
             .height(50.dp),
         verticalArrangement = Arrangement.SpaceBetween
     ) {
@@ -180,11 +184,13 @@ fun GameRow(
 }
 
 @Composable
-fun GameScreenInitial(
+fun GameScreen(
     navController: NavController,
     playerId: Long,
-    colors: Int = 6
+    colors: Int = 6,
+    gameViewModel: GameViewModel = viewModel(factory = ViewModelProvider.Factory)
 ) {
+    val coroutineScope = rememberCoroutineScope()
     var usedColors by remember { mutableStateOf(selectRandomColors(AVAILABLE_COLORS, colors)) }
     var correctAnswer by remember { mutableStateOf(selectRandomColors(usedColors, 4)) }
     var selectedColors = remember {
@@ -256,6 +262,12 @@ fun GameScreenInitial(
 
                         if (feedbackColors.all { it == Color.Red }) {
                             isGameOver = true
+
+                            coroutineScope.launch {
+                                gameViewModel.playerId = playerId
+                                gameViewModel.score = attempts
+                                gameViewModel.saveScore()
+                            }
                         } else {
                             history.add(
                                 Pair(
@@ -275,17 +287,27 @@ fun GameScreenInitial(
 
         item {
             if (isGameOver) {
-                Button(onClick = {
-                    usedColors = selectRandomColors(AVAILABLE_COLORS, 6)
-                    correctAnswer = selectRandomColors(usedColors, 4)
-                    selectedColors.clear()
-                    feedbackColors.clear()
-                    selectedColors.addAll(List(4) { Color.Transparent })
-                    feedbackColors.addAll(List(4) { Color.Transparent })
-                    history.clear()
-                    attempts = 0
-                    isGameOver = false
-                }) { Text("Play Again") }
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                    modifier = Modifier.padding(top = 48.dp)
+                ) {
+                    Button(onClick = {
+                        usedColors = selectRandomColors(AVAILABLE_COLORS, 6)
+                        correctAnswer = selectRandomColors(usedColors, 4)
+                        selectedColors.clear()
+                        feedbackColors.clear()
+                        selectedColors.addAll(List(4) { Color.Transparent })
+                        feedbackColors.addAll(List(4) { Color.Transparent })
+                        history.clear()
+                        attempts = 0
+                        isGameOver = false
+                    }) { Text("Play Again") }
+
+                    Button(onClick = {
+                        navController.navigate(route = Screen.Leaderboard.route + "/${playerId}/${attempts}/${colors}")
+                    }) { Text(text = "Leaderboard") }
+                }
+
             }
         }
 
@@ -295,11 +317,12 @@ fun GameScreenInitial(
                 modifier = Modifier.padding(top = 48.dp)
             ) {
                 Button(onClick = {
-                    navController.navigate(route = Screen.Profile.route + "${playerId}/${colors}")
-                }) { Text(text = "See your profile") }
-                Button(onClick = {
                     navController.navigate(route = Screen.Login.route)
                 }) { Text(text = "Logout") }
+
+                Button(onClick = {
+                    navController.navigate(route = Screen.Profile.route + "/${playerId}/${colors}")
+                }) { Text(text = "Profile") }
             }
         }
     }
@@ -319,19 +342,25 @@ fun selectNextAvailableColor(
     selectedColors: List<Color>,
     buttonNumber: Int
 ): Color {
-    val currentIndex = availableColors.indexOf(selectedColors[buttonNumber])
+    val currentColor = selectedColors[buttonNumber]
     val availableButNotSelected = availableColors.filterNot { selectedColors.contains(it) }
 
-    var newColorIndex = if (currentIndex == availableColors.size - 1) 0 else currentIndex + 1
-    while(newColorIndex != currentIndex) {
-        val nextColor = availableColors[currentIndex]
+    if (availableButNotSelected.isEmpty()) {
+        return currentColor
+    }
+
+    val currentIndex = availableColors.indexOf(currentColor)
+    var newColorIndex = if (currentIndex == availableColors.lastIndex) 0 else currentIndex + 1
+
+    while (newColorIndex != currentIndex) {
+        val nextColor = availableColors[newColorIndex]
         if (nextColor in availableButNotSelected) {
             return nextColor
         }
 
         newColorIndex++
 
-        if(newColorIndex == availableColors.size)
+        if (newColorIndex == availableColors.size)
             newColorIndex = 0
     }
 

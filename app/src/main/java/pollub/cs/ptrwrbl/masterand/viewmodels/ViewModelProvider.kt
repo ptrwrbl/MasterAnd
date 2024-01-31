@@ -9,13 +9,16 @@ import pollub.cs.ptrwrbl.masterand.MasterAndApplication
 object ViewModelProvider {
     val Factory = viewModelFactory {
         initializer {
-            PlayerViewModel(masterAndApplication().container.playerRepository)
+            LoginViewModel(masterAndApplication().container.playerRepository)
         }
         initializer {
-            ScoreViewModel(masterAndApplication().container.scoreRepository)
+            GameViewModel(masterAndApplication().container.scoreRepository)
         }
         initializer {
-            PlayerScoreViewModel(masterAndApplication().container.playerScoreRepository)
+            ProfileViewModel(masterAndApplication().container.playerScoreRepository)
+        }
+        initializer {
+            LeaderboardViewModel(masterAndApplication().container.playerScoreRepository)
         }
     }
 }

@@ -5,5 +5,6 @@ import pollub.cs.ptrwrbl.masterand.models.PlayerWithScore
 
 interface PlayerScoreRepository {
 
+    fun getPlayerScore(playerId: Long): Flow<PlayerWithScore>
     fun getAllPlayersWithScores(): Flow<List<PlayerWithScore>>
 }

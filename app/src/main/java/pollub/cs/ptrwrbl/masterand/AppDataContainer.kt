@@ -13,7 +13,7 @@ import pollub.cs.ptrwrbl.masterand.repositories.ScoreRepositoryImpl
 interface AppContainer {
     val playerRepository: PlayerRepository
     val scoreRepository: ScoreRepository
-    val playerWithScoreRepository: PlayerScoreRepository
+    val playerScoreRepository: PlayerScoreRepository
 }
 class AppDataContainer(private val context: Context) : AppContainer {
     override val playerRepository: PlayerRepository by lazy {
@@ -24,7 +24,7 @@ class AppDataContainer(private val context: Context) : AppContainer {
         ScoreRepositoryImpl(HighScoreDatabase.getDatabase(context).getScoreDao())
     }
 
-    override val playerWithScoreRepository: PlayerScoreRepository by lazy {
-        PlayerScoreRepositoryImpl(HighScoreDatabase.getDatabase(context).getPlayerWithScoreDao())
+    override val playerScoreRepository: PlayerScoreRepository by lazy {
+        PlayerScoreRepositoryImpl(HighScoreDatabase.getDatabase(context).getPlayerScoreDao())
     }
 }
